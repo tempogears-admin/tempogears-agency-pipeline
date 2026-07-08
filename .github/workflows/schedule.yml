@@ -1,0 +1,61 @@
+name: Schedule TikTok Posts
+
+on:
+  push:
+    paths:
+      - 'clients/**/posts.csv'
+
+jobs:
+  schedule:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install TempoGears CLI
+        run: npm install -g tiktok-tg
+
+      - name: Authenticate with TempoGears
+        run: tg auth api-key ${{ secrets.TG_API_KEY }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Find changed CSVs
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'posts.csv' || true)
+          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed files: $CHANGED"
+
+      - name: Download videos and schedule posts for changed clients
+        run: |
+          for CSV in ${{ steps.changed.outputs.files }}; do
+            CLIENT_DIR=$(dirname "$CSV")
+            CLIENT_NAME=$(basename "$CLIENT_DIR")
+            echo "──────────────────────────────────────"
+            echo "Processing client: $CLIENT_NAME"
+            echo "──────────────────────────────────────"
+
+            # Download this client's videos from S3
+            aws s3 sync s3://${{ secrets.S3_VIDEOS_BUCKET }}/$CLIENT_NAME/videos/ $CLIENT_DIR/videos/ \
+              --exclude "*" --include "*.mp4"
+
+            # Schedule posts
+            tg bulk-schedule $CSV --dry-run
+            tg bulk-schedule $CSV
+
+            echo "✓ Done: $CLIENT_NAME"
+          done
