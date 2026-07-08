@@ -26,36 +26,48 @@ jobs:
       - name: Authenticate with TempoGears
         run: tg auth api-key ${{ secrets.TG_API_KEY }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
       - name: Find changed CSVs
         id: changed
         run: |
-          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'posts.csv' || true)
+          CHANGED=$(git diff --name-only HEAD~1 HEAD | grep 'posts.csv' | tr '\n' ' ' || true)
           echo "files=$CHANGED" >> $GITHUB_OUTPUT
           echo "Changed files: $CHANGED"
 
-      - name: Download videos and schedule posts for changed clients
+      - name: Download videos and schedule posts
         run: |
-          for CSV in ${{ steps.changed.outputs.files }}; do
-            CLIENT_DIR=$(dirname "$CSV")
-            CLIENT_NAME=$(basename "$CLIENT_DIR")
-            echo "──────────────────────────────────────"
-            echo "Processing client: $CLIENT_NAME"
-            echo "──────────────────────────────────────"
+          python3 << 'PYEOF'
+          import csv, os, subprocess, sys
 
-            # Download this client's videos from S3
-            aws s3 sync s3://${{ secrets.S3_VIDEOS_BUCKET }}/$CLIENT_NAME/videos/ $CLIENT_DIR/videos/ \
-              --exclude "*" --include "*.mp4"
+          changed = "${{ steps.changed.outputs.files }}".strip().split()
 
-            # Schedule posts
-            tg bulk-schedule $CSV --dry-run
-            tg bulk-schedule $CSV
+          for csv_path in changed:
+            client_dir = os.path.dirname(csv_path)
+            client_name = os.path.basename(client_dir)
+            print(f"\n{'─'*40}")
+            print(f"Processing client: {client_name}")
+            print(f"{'─'*40}")
 
-            echo "✓ Done: $CLIENT_NAME"
-          done
+            # Download videos — supports both video_url (TempoGears upload portal)
+            # and S3 paths via AWS CLI (legacy direct-upload clients)
+            with open(csv_path) as f:
+              rows = list(csv.DictReader(f))
+
+            for row in rows:
+              video_file = os.path.join(client_dir, row['video_file'])
+              os.makedirs(os.path.dirname(video_file), exist_ok=True)
+
+              if row.get('video_url'):
+                print(f"Downloading {row['video_file']} from upload portal...")
+                result = subprocess.run(['curl', '-sL', row['video_url'], '-o', video_file])
+                if result.returncode != 0:
+                  print(f"ERROR: failed to download {row['video_file']}", file=sys.stderr)
+                  sys.exit(1)
+              else:
+                print(f"Skipping download for {row['video_file']} — no video_url (expected in S3)")
+
+            print(f"\nScheduling posts for {client_name}...")
+            subprocess.run(['tg', 'bulk-schedule', csv_path, '--dry-run'], check=True)
+            subprocess.run(['tg', 'bulk-schedule', csv_path], check=True)
+            print(f"✓ Done: {client_name}")
+
+          PYEOF
