@@ -52,7 +52,7 @@ Agency reviews PR → edits caption/time if needed → merges
 GitHub Actions runs → post is scheduled ✓
 ```
 
-### Generating an upload link
+### Generating an upload link (Live Demo!)
 
 Build the URL with all four parameters pre-filled — the client only needs to drop their video:
 
@@ -68,6 +68,8 @@ https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=M
 | `time` | Scheduled time in UTC | `2026-07-14+07:00+UTC` |
 
 > **Tip:** Build these links in a spreadsheet — one row per planned post, one column per parameter, one formula to generate the full URL. Share each row's link with the relevant creator when you're ready for their video.
+
+Visit the url above to demo a new video to be scheduled!!
 
 ### What the client sees
 
