@@ -2,8 +2,6 @@ name: Schedule TikTok Posts
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'clients/**/posts.csv'
 
@@ -78,7 +76,10 @@ jobs:
 
             print(f"\nScheduling posts for {client_name}...")
             subprocess.run(['tg', 'bulk-schedule', csv_path, '--dry-run'], check=True)
-            subprocess.run(['tg', 'bulk-schedule', csv_path], check=True)
-            print(f"✓ Done: {client_name}")
+            if os.environ.get('GITHUB_REF') == 'refs/heads/main':
+              subprocess.run(['tg', 'bulk-schedule', csv_path], check=True)
+              print(f"✓ Scheduled: {client_name}")
+            else:
+              print(f"✓ Dry run complete — posts will be scheduled when this branch is merged to main")
 
           PYEOF
