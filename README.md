@@ -54,10 +54,24 @@ GitHub Actions runs → post is scheduled ✓
 
 ### Generating an upload link (Live Demo!)
 
-Build the URL with all four parameters pre-filled — the client only needs to drop their video:
+Build the URL with all four parameters pre-filled — the client only needs to drop their video. Use a date **7 days from today** so the creator has time to upload before the post goes live.
+
+Generate the link from your terminal:
+
+```bash
+# macOS
+DATE=$(date -u -v+7d "+%Y-%m-%d+10:00+UTC")
+echo "https://tempogears.com/upload?client=nova-fitness&account=%40novafitness&caption=Monday+motivation+💪+%23fitness&time=$DATE"
+
+# Linux
+DATE=$(date -u -d "+7 days" "+%Y-%m-%d+10:00+UTC")
+echo "https://tempogears.com/upload?client=nova-fitness&account=%40novafitness&caption=Monday+motivation+💪+%23fitness&time=$DATE"
+```
+
+Or build it manually — replace `YYYY-MM-DD` with a date 7 days out:
 
 ```
-https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=Monday+motivation+💪+%23fitness&time=2026-07-14+07:00+UTC
+https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=Monday+motivation+💪+%23fitness&time=YYYY-MM-DD+10:00+UTC
 ```
 
 | Parameter | Description | Example |
@@ -65,7 +79,7 @@ https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=M
 | `client` | Matches the folder name under `clients/` | `nova-fitness` |
 | `account` | TikTok handle to post to | `@novafitness` |
 | `caption` | Caption and hashtags (URL-encode spaces as `+`) | `Monday+motivation+💪` |
-| `time` | Scheduled time in UTC | `2026-07-14+07:00+UTC` |
+| `time` | Scheduled time in UTC, 7+ days out | `2026-07-16+10:00+UTC` |
 
 > **Tip:** Build these links in a spreadsheet — one row per planned post, one column per parameter, one formula to generate the full URL. Share each row's link with the relevant creator when you're ready for their video.
 
@@ -74,14 +88,14 @@ https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=M
 ### What the client sees
 
 1. **Upload page** — shows the scheduled account, caption, and time locked in. They just drop the MP4 and hit Submit.
-2. **Status page** — after upload they land on `tempogears.com/upload-status` showing a timeline: uploaded → review sent → pending agency approval → goes live.
+2. **Status page** — after upload they land on `tempogears.com/upload-status` showing their submission timeline and a link to the pending branch in this repo.
 
 ### What the agency sees
 
 A pull request in this repo, one per submission:
 
 ```
-PR: "New post for nova-fitness — @novafitness at 2026-07-14 07:00 UTC"
+PR: "New post for nova-fitness — @novafitness at 2026-07-16 10:00 UTC"
 
 Changes:
   clients/nova-fitness/posts.csv  (+1 row)
