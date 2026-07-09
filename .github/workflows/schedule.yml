@@ -2,6 +2,8 @@ name: Schedule TikTok Posts
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'clients/**/posts.csv'
 
