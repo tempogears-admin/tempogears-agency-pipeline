@@ -54,32 +54,21 @@ GitHub Actions runs → post is scheduled ✓
 
 ### Generating an upload link (Live Demo!)
 
-Build the URL with all four parameters pre-filled — the client only needs to drop their video. Use a date **7 days from today** so the creator has time to upload before the post goes live.
-
-Generate the link from your terminal:
-
-```bash
-# macOS
-DATE=$(date -u -v+7d "+%Y-%m-%d+10:00+UTC")
-echo "https://tempogears.com/upload?client=nova-fitness&account=%40novafitness&caption=Monday+motivation+💪+%23fitness&time=$DATE"
-
-# Linux
-DATE=$(date -u -d "+7 days" "+%Y-%m-%d+10:00+UTC")
-echo "https://tempogears.com/upload?client=nova-fitness&account=%40novafitness&caption=Monday+motivation+💪+%23fitness&time=$DATE"
-```
-
-Or build it manually — replace `YYYY-MM-DD` with a date 7 days out:
+Build the URL with all parameters pre-filled — the client only needs to drop their video. Use `days` and `hour` instead of a fixed date so the link **never goes stale**.
 
 ```
-https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=Monday+motivation+💪+%23fitness&time=YYYY-MM-DD+10:00+UTC
+https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=Monday+motivation+💪+%23fitness&days=7&hour=10
 ```
+
+The upload page computes the actual scheduled time at the moment the creator opens the link — so a link sent today schedules 7 days from today, a link sent next month schedules 7 days from then.
 
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `client` | Matches the folder name under `clients/` | `nova-fitness` |
 | `account` | TikTok handle to post to | `@novafitness` |
 | `caption` | Caption and hashtags (URL-encode spaces as `+`) | `Monday+motivation+💪` |
-| `time` | Scheduled time in UTC, 7+ days out | `2026-07-16+10:00+UTC` |
+| `days` | Days from now to schedule the post | `7` |
+| `hour` | Hour of day to post, in UTC (0–23) | `10` |
 
 > **Tip:** Build these links in a spreadsheet — one row per planned post, one column per parameter, one formula to generate the full URL. Share each row's link with the relevant creator when you're ready for their video.
 
