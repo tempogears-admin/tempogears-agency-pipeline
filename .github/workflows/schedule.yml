@@ -24,7 +24,15 @@ jobs:
         run: npm install -g tiktok-tg
 
       - name: Authenticate with TempoGears
-        run: tg auth api-key ${{ secrets.TG_API_KEY }}
+        run: |
+          if [ -z "$TG_API_KEY" ]; then
+            echo "Error: TG_API_KEY secret is not set in this repo."
+            echo "Go to Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          tg auth api-key "$TG_API_KEY"
+        env:
+          TG_API_KEY: ${{ secrets.TG_API_KEY }}
 
       - name: Find changed CSVs
         id: changed
@@ -56,9 +64,10 @@ jobs:
               video_file = os.path.join(client_dir, row['video_file'])
               os.makedirs(os.path.dirname(video_file), exist_ok=True)
 
-              if row.get('video_url'):
+              video_url = row.get('video_url', '')
+              if video_url and video_url.startswith('http'):
                 print(f"Downloading {row['video_file']} from upload portal...")
-                result = subprocess.run(['curl', '-sL', row['video_url'], '-o', video_file])
+                result = subprocess.run(['curl', '-sL', video_url, '-o', video_file])
                 if result.returncode != 0:
                   print(f"ERROR: failed to download {row['video_file']}", file=sys.stderr)
                   sys.exit(1)
