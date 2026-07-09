@@ -36,6 +36,68 @@ The pipeline authenticates to TempoGears using just the API key. It never talks 
 
 ---
 
+## Client upload portal
+
+Instead of clients uploading videos directly to S3, you can send them a TempoGears upload link. They drop their video in a browser, and a GitHub PR is automatically opened for your review — no S3 credentials, no GitHub access needed on their end.
+
+### How it works
+
+```
+Agency generates link → sends to client
+Client visits tempogears.com/upload?... → drops MP4
+Video uploads directly to S3 (no size limit, progress bar)
+TempoGears opens a PR in this repo with the new CSV row
+Client lands on a status page showing their submission
+Agency reviews PR → edits caption/time if needed → merges
+GitHub Actions runs → post is scheduled ✓
+```
+
+### Generating an upload link
+
+Build the URL with all four parameters pre-filled — the client only needs to drop their video:
+
+```
+https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=Monday+motivation+💪+%23fitness&time=2026-07-14+07:00+UTC
+```
+
+| Parameter | Description | Example |
+|-----------|-------------|---------|
+| `client` | Matches the folder name under `clients/` | `nova-fitness` |
+| `account` | TikTok handle to post to | `@novafitness` |
+| `caption` | Caption and hashtags (URL-encode spaces as `+`) | `Monday+motivation+💪` |
+| `time` | Scheduled time in UTC | `2026-07-14+07:00+UTC` |
+
+> **Tip:** Build these links in a spreadsheet — one row per planned post, one column per parameter, one formula to generate the full URL. Share each row's link with the relevant creator when you're ready for their video.
+
+### What the client sees
+
+1. **Upload page** — shows the scheduled account, caption, and time locked in. They just drop the MP4 and hit Submit.
+2. **Status page** — after upload they land on `tempogears.com/upload-status` showing a timeline: uploaded → review sent → pending agency approval → goes live.
+
+### What the agency sees
+
+A pull request in this repo, one per submission:
+
+```
+PR: "New post for nova-fitness — @novafitness at 2026-07-14 07:00 UTC"
+
+Changes:
+  clients/nova-fitness/posts.csv  (+1 row)
+```
+
+Review the caption and time in the diff, edit if needed, then merge. The pipeline runs automatically on merge.
+
+### CSV format with upload portal
+
+The portal adds a `video_url` column (a 7-day pre-signed download URL). The pipeline handles this automatically — no S3 credentials needed in GitHub Secrets for portal-submitted videos.
+
+```csv
+account,video_file,video_url,caption,time
+@novafitness,videos/nova-workout.mp4,"https://s3.amazonaws.com/...","Monday motivation 💪",2026-07-14 07:00 UTC
+```
+
+---
+
 ## Directory structure
 
 ```
