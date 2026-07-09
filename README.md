@@ -69,7 +69,7 @@ https://tempogears.com/upload?client=nova-fitness&account=@novafitness&caption=M
 
 > **Tip:** Build these links in a spreadsheet — one row per planned post, one column per parameter, one formula to generate the full URL. Share each row's link with the relevant creator when you're ready for their video.
 
-Visit the url above to demo a new video to be scheduled!!
+🔧🔧🔧Visit the pre-filled url above to demo a new video to be scheduled!! 🔧🔧🔧
 
 ### What the client sees
 
