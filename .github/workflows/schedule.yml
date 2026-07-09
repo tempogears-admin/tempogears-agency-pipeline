@@ -24,7 +24,15 @@ jobs:
         run: npm install -g tiktok-tg
 
       - name: Authenticate with TempoGears
-        run: tg auth api-key ${{ secrets.TG_API_KEY }}
+        run: |
+          if [ -z "$TG_API_KEY" ]; then
+            echo "Error: TG_API_KEY secret is not set in this repo."
+            echo "Go to Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+          tg auth api-key "$TG_API_KEY"
+        env:
+          TG_API_KEY: ${{ secrets.TG_API_KEY }}
 
       - name: Find changed CSVs
         id: changed
